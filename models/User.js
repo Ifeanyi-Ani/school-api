@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 function generateUniversityID(role) {
   const year = new Date().getFullYear();
@@ -45,6 +46,7 @@ const userSchema = new mongoose.Schema({
   pswd: {
     type: String,
     required: [true, 'password is required'],
+    select: false,
   },
 });
 userSchema.set('toJSON', {
@@ -53,10 +55,23 @@ userSchema.set('toJSON', {
     return ret;
   },
 });
-userSchema.pre('save', function (next) {
+userSchema.pre('save', async function (next) {
+  const salt = await bcrypt.genSalt(10);
+  this.pswd = await bcrypt.hash(this.pswd, salt);
   if (!this.universityID) {
     this.universityID = generateUniversityID(this.role);
   }
   next();
 });
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword,
+  next
+) {
+  try {
+    return await bcrypt.compare(candidatePassword, userPassword);
+  } catch (err) {
+    next(err);
+  }
+};
 module.exports = mongoose.model('User', userSchema);

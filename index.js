@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const createError = require('http-errors');
 const dotenv = require('dotenv');
 
+const userRoutes = require('./routes/user.routes');
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -20,7 +22,7 @@ mongoose
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
-
+app.use('/users', userRoutes);
 app.all('*', (req, res, next) => {
   next(createError(404, `Can't find ${req.originalUrl} on this server`));
 });

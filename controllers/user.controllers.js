@@ -17,7 +17,7 @@ const sendToken = (res, user, statusCode) => {
 exports.createUser = async (req, res, next) => {
   try {
     const user = await User.create(req.body);
-    sendToken(res, user, 201);
+    res.status(201).json(user);
   } catch (err) {
     if (err.name === mongoose.validationError) {
       return next(createError(402, err.message));
@@ -78,5 +78,17 @@ exports.deleteUser = async (req, res, next) => {
     if (err instanceof mongoose.CastError) {
       return next(createError(400, 'invalid universityID'));
     }
+  }
+};
+exports.login = async (req, res, next) => {
+  try {
+    const { universityID, pswd } = req.body;
+    const user = await User.findOne({ universityID }).select('+pswd');
+    if (!user || !(await user.correctPassword(pswd, user.pswd))) {
+      throw createError(401, 'incorrect details');
+    }
+    sendToken(res, user, 200);
+  } catch (err) {
+    next(err);
   }
 };
